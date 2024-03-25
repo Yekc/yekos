@@ -1,6 +1,7 @@
 # yek os
-welcome to the github page for the greatest operating system in of all time is ever exist
-dont believe me??? stupid idiot
+welcome to the github page for the greatest operating system in of all time is ever exist  
+dont believe me??? stupid idiot  
+made with cosmos: https://cosmosos.github.io/
 
 ## what can it dor
 - terminal with a lotta commands (do @help to see them all)
