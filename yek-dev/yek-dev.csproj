@@ -1,0 +1,79 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net6.0</TargetFramework>
+        <!--<RuntimeIdentifier>cosmos</RuntimeIdentifier>-->
+        <Platform>cosmos</Platform>
+        <SupportsX86Intrinsics>false</SupportsX86Intrinsics>
+        <SelfContained>True</SelfContained>
+    </PropertyGroup>
+
+    <PropertyGroup>
+        <EnableGDB>False</EnableGDB>
+        <StartCosmosGDB>False</StartCosmosGDB>
+        <VisualStudioDebugPort>Pipe: Cosmos\Serial</VisualStudioDebugPort>
+        <CosmosDebugPort>Serial: COM1</CosmosDebugPort>
+        <Launch>VMware</Launch>
+        <Profile>VMware</Profile>
+        <Description>Use VMware Player or Workstation to deploy and debug.</Description>
+        <PxeInterface>192.168.0.8</PxeInterface>
+        <DebugEnabled>False</DebugEnabled>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <None Remove="Resources\arrow.bmp" />
+      <None Remove="Resources\hampter1.bmp" />
+      <None Remove="Resources\hampter2.bmp" />
+      <None Remove="Resources\hampter3.bmp" />
+      <None Remove="Resources\hampter4.bmp" />
+      <None Remove="Resources\hampter5.bmp" />
+      <None Remove="Resources\hampter6.bmp" />
+      <None Remove="Resources\ka8x16thin-1.psf" />
+      <None Remove="Resources\lat0-sun16.psf" />
+      <None Remove="Resources\map1.bmp" />
+      <None Remove="Resources\map2.bmp" />
+      <None Remove="Resources\modern.bmp" />
+      <None Remove="Resources\rat.bmp" />
+      <None Remove="Resources\test.bmp" />
+      <None Remove="Resources\tis-phaisarn.f16.psf" />
+      <None Remove="Resources\tis-ptconsl.f16.psf" />
+      <None Remove="Resources\tis-ptcufont.f20.psf" />
+      <None Remove="Resources\tis-ptkmfont.f24.psf" />
+      <None Remove="Resources\tis-ptlight.f16.psf" />
+      <None Remove="Resources\tis-ptramafo.f20.psf" />
+      <None Remove="Resources\tis-ptsmall.f16.psf" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <EmbeddedResource Include="Resources\arrow.bmp" />
+      <EmbeddedResource Include="Resources\hampter1.bmp" />
+      <EmbeddedResource Include="Resources\hampter2.bmp" />
+      <EmbeddedResource Include="Resources\hampter3.bmp" />
+      <EmbeddedResource Include="Resources\hampter4.bmp" />
+      <EmbeddedResource Include="Resources\hampter5.bmp" />
+      <EmbeddedResource Include="Resources\hampter6.bmp" />
+      <EmbeddedResource Include="Resources\ka8x16thin-1.psf" />
+      <EmbeddedResource Include="Resources\lat0-sun16.psf" />
+      <EmbeddedResource Include="Resources\map1.bmp" />
+      <EmbeddedResource Include="Resources\map2.bmp" />
+      <EmbeddedResource Include="Resources\modern.bmp" />
+      <EmbeddedResource Include="Resources\rat.bmp" />
+      <EmbeddedResource Include="Resources\test.bmp" />
+      <EmbeddedResource Include="Resources\tis-phaisarn.f16.psf" />
+      <EmbeddedResource Include="Resources\tis-ptconsl.f16.psf" />
+      <EmbeddedResource Include="Resources\tis-ptcufont.f20.psf" />
+      <EmbeddedResource Include="Resources\tis-ptkmfont.f24.psf" />
+      <EmbeddedResource Include="Resources\tis-ptlight.f16.psf" />
+      <EmbeddedResource Include="Resources\tis-ptramafo.f20.psf" />
+      <EmbeddedResource Include="Resources\tis-ptsmall.f16.psf" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Cosmos.Build" Version="0-*" NoWarn="NU1604" />
+        <PackageReference Include="Cosmos.Debug.Kernel" Version="0-*" NoWarn="NU1604" />
+        <PackageReference Include="Cosmos.System2" Version="0-*" NoWarn="NU1604" />
+        <PackageReference Include="Cosmos.Plugs" Version="0-*" NoWarn="NU1604" />
+        <PackageReference Include="CosmosHttp" Version="1.0.4" />
+    </ItemGroup>
+
+</Project>
