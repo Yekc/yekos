@@ -1,6 +1,8 @@
 ﻿using Cosmos.Core;
 using Cosmos.Core.Memory;
+using Cosmos.HAL;
 using Cosmos.System.Graphics.Fonts;
+using Cosmos.System.Network.Config;
 using Cosmos.System.Network.IPv4.UDP.DHCP;
 using System;
 using System.Drawing;
@@ -22,6 +24,12 @@ namespace Yek
 
         public static int PreviousHeap = 0;
 
+        protected override void OnBoot()
+        {
+            //Disable unnecessary drivers (Mousewheel, IDE Controller)
+            Cosmos.System.Global.Init(GetTextScreen(), false, true, true, false);
+        }
+
         protected override void BeforeRun()
         {
             Console.ForegroundColor = ConsoleColor.Cyan;
@@ -41,13 +49,15 @@ namespace Yek
 
             try
             {
-                using (var XClient = new DHCPClient()) XClient.SendDiscoverPacket();
+                Network.DHCP.Ask();
+                PCSpeaker.Beep(37, 500);
             }
-            catch
+            catch (Exception ex)
             {
                 Console.ForegroundColor = ConsoleColor.Red;
                 Console.WriteLine("network failed to initialize (eth0)");
-                Graphics.Canvas.DrawString("NETWORK FAILED TO INITIALIZE (eth0)", DefaultFont, Color.Red, ScreenWidth / 2, ScreenHeight / 2);
+                Console.WriteLine($"{ex.Message}");
+                PCSpeaker.Beep(37, 500);
             }
 
             Console.ForegroundColor = ConsoleColor.Yellow;
