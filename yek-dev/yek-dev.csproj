@@ -22,6 +22,7 @@
 
     <ItemGroup>
       <None Remove="Resources\arrow.bmp" />
+      <None Remove="Resources\cp850-8x8.psf" />
       <None Remove="Resources\hampter1.bmp" />
       <None Remove="Resources\hampter2.bmp" />
       <None Remove="Resources\hampter3.bmp" />
@@ -46,6 +47,7 @@
 
     <ItemGroup>
       <EmbeddedResource Include="Resources\arrow.bmp" />
+      <EmbeddedResource Include="Resources\cp850-8x8.psf" />
       <EmbeddedResource Include="Resources\hampter1.bmp" />
       <EmbeddedResource Include="Resources\hampter2.bmp" />
       <EmbeddedResource Include="Resources\hampter3.bmp" />

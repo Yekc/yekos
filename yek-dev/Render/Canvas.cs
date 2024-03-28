@@ -3,6 +3,7 @@ using Cosmos.System.Graphics.Fonts;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.Numerics;
 using Yek.Resources;
 
 namespace Yek.Render
@@ -20,16 +21,17 @@ namespace Yek.Render
             {
                 Canvas.DrawFilledRectangle(Color.FromArgb(r.Next(256), r.Next(256), r.Next(256)), r.Next(Kernel.ScreenWidth), r.Next(Kernel.ScreenHeight), r.Next(Kernel.ScreenWidth / 2), r.Next(Kernel.ScreenHeight / 2));
             }
-            Canvas.DrawFilledRectangle(Color.Black, 0, 0, 100, 180);
-            Canvas.DrawString("LAT:SUN", ResourceLoader.FontSun, Color.White, 0, 0);
-            Canvas.DrawString("KA:THIN", ResourceLoader.FontThin, Color.White, 0, 20);
-            Canvas.DrawString("TIS:AISARN", ResourceLoader.FontTisAisarn, Color.White, 0, 40);
-            Canvas.DrawString("TIS:CONSL", ResourceLoader.FontTisConsl, Color.White, 0, 60);
-            Canvas.DrawString("TIS:CUFONT", ResourceLoader.FontTisCufont, Color.White, 0, 80);
-            Canvas.DrawString("TIS:KMFONT", ResourceLoader.FontTisKmfont, Color.White, 0, 100);
-            Canvas.DrawString("TIS:LIGHT", ResourceLoader.FontTisLight, Color.White, 0, 120);
-            Canvas.DrawString("TIS:RAMAFO", ResourceLoader.FontTisRamafo, Color.White, 0, 140);
-            Canvas.DrawString("TIS:SMALL", ResourceLoader.FontTisSmall, Color.White, 0, 160);
+            Canvas.DrawFilledRectangle(Color.Black, 0, 0, 100, 200);
+            Canvas.DrawString("KA:THIN", ResourceLoader.FontThin, Color.White, 0, 0);
+            Canvas.DrawString("KA:TINY", ResourceLoader.FontTiny, Color.White, 0, 20);
+            Canvas.DrawString("LAT:SUN", ResourceLoader.FontSun, Color.White, 0, 40);
+            Canvas.DrawString("TIS:AISARN", ResourceLoader.FontTisAisarn, Color.White, 0, 60);
+            Canvas.DrawString("TIS:CONSL", ResourceLoader.FontTisConsl, Color.White, 0, 80);
+            Canvas.DrawString("TIS:CUFONT", ResourceLoader.FontTisCufont, Color.White, 0, 100);
+            Canvas.DrawString("TIS:KMFONT", ResourceLoader.FontTisKmfont, Color.White, 0, 120);
+            Canvas.DrawString("TIS:LIGHT", ResourceLoader.FontTisLight, Color.White, 0, 140);
+            Canvas.DrawString("TIS:RAMAFO", ResourceLoader.FontTisRamafo, Color.White, 0, 160);
+            Canvas.DrawString("TIS:SMALL", ResourceLoader.FontTisSmall, Color.White, 0, 180);
         }
 
         public static void Clear(Color color)

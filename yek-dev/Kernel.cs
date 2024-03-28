@@ -6,6 +6,7 @@ using Cosmos.System.Network.Config;
 using Cosmos.System.Network.IPv4.UDP.DHCP;
 using System;
 using System.Drawing;
+using Yek.Pages;
 using Yek.Render;
 using Yek.Resources;
 
@@ -86,7 +87,7 @@ namespace Yek
 
                 #endregion
 
-                Graphics.Canvas.DrawString($"{(CPU.GetEndOfKernel() + 1024) / 1048576}", DefaultFont, Color.DarkCyan, 0, ScreenHeight - 20);
+                Graphics.Canvas.DrawString($"M:{Terminal.Macros.Count},L:{Terminal.Looped.Count},SL:{Terminal.SetLooped.Count}", DefaultFont, Color.DarkCyan, 0, ScreenHeight - 20);
 
                 Mouse.Draw();
                 Graphics.Canvas.Display();

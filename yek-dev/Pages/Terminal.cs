@@ -24,9 +24,11 @@ namespace Yek.Pages
         static bool Fm = false;
 
         static bool DoOutput = true;
+        static bool AllowInput = true;
 
-        static List<string> Looped = new();
-        static Dictionary<int, string> Macros = new();
+        public static List<string> Looped = new();
+        public static Dictionary<int, string> SetLooped = new();
+        public static Dictionary<int, string> Macros = new();
 
         static bool PersistLoops = false;
         static bool PersistMacros = true;
@@ -35,6 +37,7 @@ namespace Yek.Pages
         static int PreviousContentCycles = 0;
 
         static Dictionary<string, int> Variables = new();
+        static Dictionary<string, string> Functions = new();
 
         public static void Check()
         {
@@ -58,19 +61,10 @@ namespace Yek.Pages
             switch (k.Key)
             {
                 default:
-                    if (Active && char.IsAscii(k.KeyChar)) Content += k.KeyChar;
+                    if (Active && AllowInput && char.IsAscii(k.KeyChar)) Content += k.KeyChar;
                     break;
                 case ConsoleKeyEx.F1:
-                    Content += "\n";
-                    break;
-                case ConsoleKeyEx.F2:
-                    Content += "¢";
-                    break;
-                case ConsoleKeyEx.F3:
-                    Content += "¡";
-                    break;
-                case ConsoleKeyEx.F4:
-                    Content += "£";
+                    if (AllowInput) Content += "\n";
                     break;
                 case ConsoleKeyEx.Escape:
                     if (HurtEyes.Active || AncientInterface.Active) break;
@@ -83,6 +77,7 @@ namespace Yek.Pages
                     {
                         Kernel.ClearColor = Color.Black;
                     }
+                    AllowInput = true;
                     Content = "";
                     LineY = 0;
                     Dip = 65;
@@ -93,10 +88,10 @@ namespace Yek.Pages
                     if (Active) FirstDraw();
                     break;
                 case ConsoleKeyEx.Enter:
-                    if (Active && Content != "")
+                    if (Active && AllowInput && Content != "")
                     {
                         LineY++;
-                        if (LineY > (Kernel.ScreenHeight / 20) - 4)
+                        if (LineY > (Kernel.ScreenHeight / (Kernel.DefaultFont.Height + 4)) - 4)
                         {
                             LineY = 0;
                             if (Dip == 65) Dip = 5;
@@ -108,20 +103,20 @@ namespace Yek.Pages
                     }
                     break;
                 case ConsoleKeyEx.Backspace:
-                    if (Content.Length > 0) Content = Content.Remove(Content.Length - 1);
+                    if (AllowInput && Content.Length > 0) Content = Content.Remove(Content.Length - 1);
                     break;
                 case ConsoleKeyEx.Tab:
-                    Content += "    ";
+                    if (AllowInput) Content += "    ";
                     break;
                 case ConsoleKeyEx.UpArrow:
-                    if (PreviousContent.Count > PreviousContentCycles)
+                    if (AllowInput && PreviousContent.Count > PreviousContentCycles)
                     {
                         PreviousContentCycles++;
                         Content = PreviousContent[PreviousContent.Count - PreviousContentCycles];
                     }
                     break;
                 case ConsoleKeyEx.DownArrow:
-                    if (PreviousContentCycles > 1)
+                    if (AllowInput && PreviousContentCycles > 1)
                     {
                         PreviousContentCycles--;
                         Content = PreviousContent[PreviousContent.Count - PreviousContentCycles];
@@ -159,13 +154,32 @@ namespace Yek.Pages
                 {
                     ProcessCommand(Command);
                 }
-                catch
+                catch (Exception ex)
                 {
-                    Graphics.Canvas.DrawString("LOOP ERROR", Kernel.DefaultFont, Color.Red, 0, 0);
+                    Graphics.Canvas.DrawString($"LOOP ERROR {Looped.Count} {ex.Message}", Kernel.DefaultFont, Color.Red, 0, 0);
                 }
             }
 
-            if (Active)
+            foreach (int Key in SetLooped.Keys)
+            {
+                int Iterations = Convert.ToInt32(SetLooped[Key].Split('%')[0]);
+                if (Iterations <= 0)
+                {
+                    SetLooped.Remove(Key);
+                    continue;
+                }
+                try
+                {
+                    ProcessCommand(SetLooped[Key].Replace("$*l", Iterations.ToString()));
+                }
+                catch (Exception ex)
+                {
+                    Graphics.Canvas.DrawString($"SET LOOP ERROR {Key} {SetLooped.Count} {ex.Message}", Kernel.DefaultFont, Color.Red, 0, 0);
+                }
+                SetLooped[Key] = SetLooped[Key].Replace($"{Iterations}%", $"{Iterations - 1}%");
+            }
+
+            if (Active && AllowInput)
             {
                 if (Fm)
                 {
@@ -175,103 +189,278 @@ namespace Yek.Pages
 
                 if (Content.Length < MaxLine)
                 {
-                    Graphics.Canvas.DrawString($"{Content}", Kernel.DefaultFont, Color.Brown, LineX, Dip + (LineY * 20));
+                    Graphics.Canvas.DrawString($"{Content}", Kernel.DefaultFont, Color.Brown, LineX, Dip + (LineY * (Kernel.DefaultFont.Height + 4)));
                 }
                 else
                 {
-                    Graphics.Canvas.DrawString($"{Content.Substring(Content.Length - MaxLine)}", Kernel.DefaultFont, Color.Brown, LineX, Dip + (LineY * 20));
+                    Graphics.Canvas.DrawString($"{Content.Substring(Content.Length - MaxLine)}", Kernel.DefaultFont, Color.Brown, LineX, Dip + (LineY * (Kernel.DefaultFont.Height + 4)));
                 }
             }
         }
 
+        static string ProcessVariables(string Command)
+        {
+            Command = Command.Replace("$$mx", MouseManager.X.ToString())
+                        .Replace("$$my", MouseManager.Y.ToString())
+                        .Replace("$$b", Home.Score.ToString())
+                        .Replace("$$w", Kernel.ScreenWidth.ToString())
+                        .Replace("$$h", Kernel.ScreenHeight.ToString());
+            if (Command.Contains("$?"))
+            {
+                try
+                {
+                    if (Command.Contains('(') && Command.Contains(')'))
+                    {
+                        Command = Command.Replace(Command.Split("$?(")[1].Split(')')[0], ProcessVariables(Command.Split("$?(")[1].Split(')')[0]));
+                    }
+                    else if (Command.Contains('[') && Command.Contains(']'))
+                    {
+                        Command = Command.Replace(Command.Split("$?[")[1].Split(']')[0], ProcessVariables(Command.Split("$?(")[1].Split(')')[0]));
+                    }
+                    else
+                    {
+                        Command = Command.Replace(Command.Split("$?{")[1].Split('}')[0], ProcessVariables(Command.Split("$?(")[1].Split(')')[0]));
+                    }
+                }
+                catch
+                {
+                    PrintLine($"failed to process variables ({Command})", Color.Red);
+                }
+            }
+            //Todo for random and math: they break if there is more : in the command that isnt related to them
+            if (Command.Contains("$~r"))
+            {
+                Random r = new();
+                int Min = Convert.ToInt32(Command.Split("$~r")[1].Split(' ')[0].Split(':')[1]);
+                int Max = Convert.ToInt32(Command.Split("$~r")[1].Split(' ')[0].Split(':')[2]);
+                Command = Command.Replace($"$~r{Command.Split("$~r")[1].Split(' ')[0]}", r.Next(Min, Max).ToString());
+            }
+            if (Command.Contains("$^"))
+            {
+                try
+                {
+                    switch (Command.Split(':')[1])
+                    {
+                        case "+":
+                            Command = Command.Replace($"$^{Command.Split("$^")[1].Split(':')[0]}:+:{Command.Split(':')[2].Split(' ')[0]}", (Convert.ToInt32(ProcessVariables(Command.Split("$^")[1].Split(':')[0])) + Convert.ToInt32(ProcessVariables(Command.Split(':')[2].Split(' ')[0]))).ToString());
+                            break;
+                        case "-":
+                            Command = Command.Replace($"$^{Command.Split("$^")[1].Split(':')[0]}:+:{Command.Split(':')[2].Split(' ')[0]}", (Convert.ToInt32(ProcessVariables(Command.Split("$^")[1].Split(':')[0])) - Convert.ToInt32(ProcessVariables(Command.Split(':')[2].Split(' ')[0]))).ToString());
+                            break;
+                        case "*":
+                            Command = Command.Replace($"$^{Command.Split("$^")[1].Split(':')[0]}:+:{Command.Split(':')[2].Split(' ')[0]}", (Convert.ToInt32(ProcessVariables(Command.Split("$^")[1].Split(':')[0])) * Convert.ToInt32(ProcessVariables(Command.Split(':')[2].Split(' ')[0]))).ToString());
+                            break;
+                        case "/":
+                            Command = Command.Replace($"$^{Command.Split("$^")[1].Split(':')[0]}:+:{Command.Split(':')[2].Split(' ')[0]}", (Convert.ToInt32(ProcessVariables(Command.Split("$^")[1].Split(':')[0])) / Convert.ToInt32(ProcessVariables(Command.Split(':')[2].Split(' ')[0]))).ToString());
+                            break;
+                        case "%":
+                            Command = Command.Replace($"$^{Command.Split("$^")[1].Split(':')[0]}:+:{Command.Split(':')[2].Split(' ')[0]}", (Convert.ToInt32(ProcessVariables(Command.Split("$^")[1].Split(':')[0])) % Convert.ToInt32(ProcessVariables(Command.Split(':')[2].Split(' ')[0]))).ToString());
+                            break;
+                    }
+                }
+                catch
+                {
+                    PrintLine($"failed to do math ({Command})", Color.Red);
+                }
+            }
+            foreach (string VarSpl in Command.Split("$%"))
+            {
+                string VarName = VarSpl;
+                if (VarSpl.Contains(' ')) VarName = VarSpl.Split(' ')[0];
+                if (Variables.ContainsKey(VarName))
+                {
+                    Command = Command.Replace($"$%{VarName}", Variables[VarName].ToString());
+                }
+            }
+
+            return Command;
+        }
+
         static void ProcessCommand(string Command)
         {
+            #region Multiple Lines
+
             Command = Command.Replace("\r", "");
             if (Command.Contains('\n'))
             {
                 foreach (string Cmd in Command.Split('\n'))
                 {
-                    if (Command.StartsWith("#") || Command.Length == 0) continue;
-                    ProcessCommand(Cmd);
+                    if (!(Cmd.StartsWith("#") || Cmd.Length == 0)) ProcessCommand(Cmd);
                 }
                 return;
             }
 
-            #region Variables
-
-            if (!Command.StartsWith('&'))
-            {
-                Command = Command.Replace("$¢mx", MouseManager.X.ToString())
-                    .Replace("$¢my", MouseManager.Y.ToString())
-                    .Replace("$¢b", Home.Score.ToString())
-                    .Replace("$¢w", Kernel.ScreenWidth.ToString())
-                    .Replace("$¢h", Kernel.ScreenHeight.ToString());
-                if (Command.Contains("$£r"))
-                {
-                    Random r = new Random();
-                    int Min = Convert.ToInt32(Command.Split('£')[1].Split(' ')[0].Split(':')[1]);
-                    int Max = Convert.ToInt32(Command.Split('£')[1].Split(' ')[0].Split(':')[2]);
-                    Command = Command.Replace($"$£{Command.Split('£')[1].Split(' ')[0]}", r.Next(Min, Max).ToString());
-                }
-                foreach (string VarSpl in Command.Split('¡'))
-                {
-                    string VarName = VarSpl;
-                    if (VarSpl.Contains(' ')) VarName = VarSpl.Split(' ')[0];
-                    if (Variables.ContainsKey(VarName))
-                    {
-                        Command = Command.Replace($"$¡{VarName}", Variables[VarName].ToString());
-                    }
-                }
-            }
-
             #endregion
 
-            if (Command.StartsWith('@') || Command.StartsWith('&'))
+            if (!(Command.StartsWith('*') || Command.StartsWith('&') || Command.StartsWith("@@")) || Looped.Contains(Command) || SetLooped.ContainsValue(Command) || Functions.ContainsValue(Command)) Command = ProcessVariables(Command);
+
+            if (Command.StartsWith('@') || Command.StartsWith('&') || Command.StartsWith('*'))
             {
-                if (Command.StartsWith('&')) Looped.Add(Command.TrimStart('&'));
+                if (Command.StartsWith('&'))
+                {
+                    Looped.Add(Command.TrimStart('&'));
+                    return;
+                }
+                if (Command.StartsWith('*'))
+                {
+                    string Cmd = "";
+                    if (Command.Split(':').Length > 2)
+                    {
+                        for (int i = 1; i < Command.Split(':').Length; i++)
+                        {
+                            Cmd += Command.Split(':')[i] + ':';
+                        }
+                        Cmd = Cmd.TrimEnd(':');
+                    }
+                    else
+                    {
+                        Cmd = Command.Split(':')[1];
+                    }
+                    Random r = new();
+                    SetLooped.Add(SetLooped.Count * r.Next(1000), $"{Convert.ToInt32(ProcessVariables(Command.TrimStart('*').Split(':')[0]))}%{Cmd}");
+                    return;
+                }
                 string[] Split = Command.Split(' ');
                 switch (Split[0].ToLower().TrimStart('&'))
                 {
                     default:
-                        PrintLine("??? dafuq", Color.Red);
+                        PrintLine($"??? dafuq (({Command}))", Color.Red);
                         break;
                     #region If Statements
                     case "@?":
-                        if (Split.Length > 6)
+                        if (Split.Length > 4)
                         {
-                            bool Run = false;
-                            switch (Split[2])
+                            try
                             {
-                                default:
-                                    PrintLine("=, <, >, !");
-                                    break;
-                                case "=":
-                                    Run = Split[1] == Split[3];
-                                    break;
-                                case "<":
-                                    Run = Convert.ToInt32(Split[1]) < Convert.ToInt32(Split[3]);
-                                    break;
-                                case ">":
-                                    Run = Convert.ToInt32(Split[1]) > Convert.ToInt32(Split[3]);
-                                    break;
-                                case "!":
-                                    Run = Split[1] != Split[3];
-                                    break;
-                            }
-
-                            if (Run)
-                            {
-                                string NewCommand = "";
-                                for (int i = 4; i < Split.Length; i++)
+                                bool Run = false;
+                                switch (Split[2])
                                 {
-                                    NewCommand += Split[i] + " ";
+                                    default:
+                                        PrintLine("=, <, >, !");
+                                        break;
+                                    case "=":
+                                        Run = Split[1] == Split[3];
+                                        break;
+                                    case "<":
+                                        Run = Convert.ToInt32(Split[1]) < Convert.ToInt32(Split[3]);
+                                        break;
+                                    case ">":
+                                        Run = Convert.ToInt32(Split[1]) > Convert.ToInt32(Split[3]);
+                                        break;
+                                    case "!":
+                                        Run = Split[1] != Split[3];
+                                        break;
                                 }
-                                ProcessCommand(NewCommand);
+
+                                if (Run)
+                                {
+                                    string NewCommand = "";
+                                    for (int i = 4; i < Split.Length; i++)
+                                    {
+                                        NewCommand += Split[i] + " ";
+                                    }
+                                    ProcessCommand(NewCommand);
+                                }
+
+                                PrintLine($"no error with ur if statement ({Command})", Color.Blue);
+                            }
+                            catch
+                            {
+                                PrintLine($"error with ur if statement ({Command})", Color.Red);
+                                PrintLine("make sure the variables being compared have their correct prefixes like $% for user defined", Color.Red);
                             }
                         }
                         else
                         {
                             PrintLine("@? $ = $ [command], @? $ < $ [command], @? $ > $ [command], @? $ ! $ [command]");
+                        }
+                        break;
+                    #endregion
+                    #region Functions
+                    case "@@":
+                        if (Split.Length > 2)
+                        {
+                            string Cmd;
+                            switch (Split[1].ToLower())
+                            {
+                                default:
+                                    try
+                                    {
+                                        if (Split.Length > 3)
+                                        {
+                                            string[] Args = Functions[Split[2]].Split('|');
+                                            string Function = Functions[Split[2]];
+                                            for (int i = 0; i < Args.Length - 1; i++)
+                                            {
+                                                Function = Function.Replace(Args[i] + "|", "");
+                                                Function = Function.Replace(Args[i], Split[3 + i]);
+                                            }
+                                            ProcessCommand(Function);
+                                        }
+                                        else
+                                        {
+                                            ProcessCommand(Functions[Split[2]]);
+                                        }
+                                    }
+                                    catch (Exception ex)
+                                    {
+                                        PrintLine($"failed to call function {Split[2]} ({Command})", Color.Red);
+                                        PrintLine($"{ex.HResult}:{ex.Message}", Color.Red);
+                                    }
+                                    break;
+                                case "arg":
+                                case "argument":
+                                    try
+                                    {
+                                        Functions[Split[2]] = $"{Split[3]}|" + Functions[Split[2]];
+                                    }
+                                    catch
+                                    {
+                                        PrintLine($"failed to add argument ({Command})", Color.Red);
+                                    }
+                                    break;
+                                case "add":
+                                case "append":
+                                    try
+                                    {
+                                        string Prev = Functions[Split[2]];
+                                        Functions.Remove(Split[2]);
+                                        Cmd = "";
+                                        for (int i = 3; i < Split.Length; i++)
+                                        {
+                                            Cmd += Split[i] + " ";
+                                        }
+                                        Functions.Add(Split[2], Prev + "\n" + Cmd);
+                                    }
+                                    catch
+                                    {
+                                        PrintLine($"failed to add command to function ({Command})", Color.Red);
+                                    }
+                                    break;
+                                case "create":
+                                case "c":
+                                case "new":
+                                case "n":
+                                    try
+                                    {
+                                        if (Functions.ContainsKey(Split[2])) Functions.Remove(Split[2]);
+                                        Cmd = "";
+                                        for (int i = 3; i < Split.Length; i++)
+                                        {
+                                            Cmd += Split[i] + " ";
+                                        }
+                                        Functions.Add(Split[2], Cmd);
+                                    }
+                                    catch
+                                    {
+                                        PrintLine($"failed to create function ({Command})", Color.Red);
+                                    }
+                                    break;
+                            }
+                        }
+                        else
+                        {
+                            PrintLine("@@ [new/add/call/arg] [name] command/[arg]");
                         }
                         break;
                     #endregion
@@ -287,63 +476,78 @@ namespace Yek.Pages
                                     default:
                                         PrintLine("HELP PAGE 1:");
                                         PrintLine("press f1 to chain commands together");
-                                        PrintLine("&@[command] - loop");
-                                        PrintLine("@? - if statement");
-                                        PrintLine("@exit - leave terminal");
-                                        PrintLine("@sysinfo - get information about your computer");
+                                        PrintLine("&@command - loop");
+                                        PrintLine("*[count]:@command - loop specified amount of times");
+                                        PrintLine("$*l - loop control variable (specified loops only)");
+                                        PrintLine("$^[variable]:[operator]:[value] - math");
                                         break;
                                     case 2:
                                         PrintLine("HELP PAGE 2:");
+                                        PrintLine("@? - if statement");
+                                        PrintLine("@@ [new/add/call/arg] [name] command/arg - function commands");
+                                        PrintLine("@exit - leave terminal");
+                                        PrintLine("@sysinfo - get information about your computer");
                                         PrintLine("@followmouse - make the terminal follow the mouse");
+                                        break;
+                                    case 3:
+                                        PrintLine("HELP PAGE 3:");
                                         PrintLine("@doarc - toggle mouse arcs");
                                         PrintLine("@c [line] - move cursor to line");
                                         PrintLine("@setenv [variable name] [value] - set an environment variable to a value");
                                         PrintLine("@setv [variable name] [value] - set a user defined variable to a value (creates if doesnt exist)");
-                                        break;
-                                    case 3:
-                                        PrintLine("HELP PAGE 3:");
                                         PrintLine("@halt - halt the cpu");
+                                        break;
+                                    case 4:
+                                        PrintLine("HELP PAGE 4:");
                                         PrintLine("@shutdown - shut down");
                                         PrintLine("@reboot - reboot the cpu");
                                         PrintLine("@clear [color] - clear the screen");
                                         PrintLine("@forceclear - toggles force clear");
-                                        break;
-                                    case 4:
-                                        PrintLine("HELP PAGE 4:");
                                         PrintLine("@draw - draw stuff on screen");
+                                        break;
+                                    case 5:
+                                        PrintLine("HELP PAGE 5:");
                                         PrintLine("@disp - display the screen buffer");
                                         PrintLine("@font - set the system font");
                                         PrintLine("@net - do networking stuff");
                                         PrintLine("@fetch [url] - download a file from the internet");
-                                        break;
-                                    case 5:
-                                        PrintLine("HELP PAGE 5:");
                                         PrintLine("@rfetch [url] - download and run a file from the internet");
-                                        PrintLine("@dout - toggle command output");
-                                        PrintLine("@memory - do stuff with memory");
-                                        PrintLine("@persist [loops/macros] - toggle macros/loops persisting when terminal is closed");
-                                        PrintLine("@beep [hertz] [ms] - beep");
                                         break;
                                     case 6:
                                         PrintLine("HELP PAGE 6:");
-                                        PrintLine("@macro [key] command - assign a command to a key");
-                                        PrintLine("@time - get the current time");
-                                        PrintLine("@hampster - wawaweewa");
-                                        PrintLine("@ascend - top secret");
-                                        PrintLine("@descend - top secret");
+                                        PrintLine("@dout - toggle command output");
+                                        PrintLine("@din - toggle command input");
+                                        PrintLine("@print [color] text - print output to the terminal (ignores dout)");
+                                        PrintLine("@persist [loops/macros] - toggle macros/loops persisting when terminal is closed");
+                                        PrintLine("@beep [hertz] [ms] - beep");
                                         break;
                                     case 7:
                                         PrintLine("HELP PAGE 7:");
-                                        PrintLine("$¢mx - mouse x position environment variable (press f2 for ¢)");
-                                        PrintLine("$¢my - mouse y position environment variable (press f2 for ¢)");
-                                        PrintLine("$¢b - buttons pressed environment variable (press f2 for ¢)");
-                                        PrintLine("$¢w - screen width (press f2 for ¢)");
-                                        PrintLine("$¢h - screen height (press f2 for ¢)");
+                                        PrintLine("@macro [key] command - assign a command to a key");
+                                        PrintLine("@time - get the current time");
+                                        PrintLine("@add [variable] [amount] - add to a variable");
+                                        PrintLine("@sub [variable] [amount] - subtract from a variable");
+                                        PrintLine("@mul [variable] [amount] - multiply a variable");
                                         break;
                                     case 8:
                                         PrintLine("HELP PAGE 8:");
-                                        PrintLine("$¡[variable name] - user defined variable (press f3 for ¡)");
-                                        PrintLine("$£r:[min]:[max] - random integer between the min and max (press f4 for £)");
+                                        PrintLine("@div [variable] [amount] - divide a variable");
+                                        PrintLine("@hampster - wawaweewa");
+                                        PrintLine("@ascend - top secret");
+                                        PrintLine("@descend - top secret");
+                                        PrintLine("$$mx - mouse x position environment variable");
+                                        break;
+                                    case 9:
+                                        PrintLine("HELP PAGE 9:");
+                                        PrintLine("$$my - mouse y position environment variable");
+                                        PrintLine("$$b - buttons pressed environment variable");
+                                        PrintLine("$$w - screen width");
+                                        PrintLine("$$h - screen height");
+                                        PrintLine("$%[variable name] - user defined variable");
+                                        break;
+                                    case 10:
+                                        PrintLine("HELP PAGE 10:");
+                                        PrintLine("$~r:[min]:[max] - random integer between the min and max");
                                         break;
                                 }
                             }
@@ -423,7 +627,7 @@ namespace Yek.Pages
                                 switch (Split[1].ToLower())
                                 {
                                     default:
-                                        PrintLine("??? its just mx or my or b", Color.Red);
+                                        PrintLine($"??? its just mx or my or b ({Command})", Color.Red);
                                         break;
                                     case "mx":
                                         MouseManager.X = Convert.ToUInt32(Split[2]);
@@ -439,7 +643,7 @@ namespace Yek.Pages
                             catch
                             {
                                 if (Command.StartsWith('&')) Looped.RemoveAt(Looped.IndexOf(Command));
-                                PrintLine("??? you did something wrong i think", Color.Red);
+                                PrintLine($"??? you did something wrong i think ({Command})", Color.Red);
                             }
                         }
                         else
@@ -532,9 +736,48 @@ namespace Yek.Pages
                             DoOutput = !DoOutput;
                         }
                         break;
-                    case "@memory":
-                    case "@mem":
-                        PrintLine($"not implemented yet {RandomFace()}");
+                    case "@doinput":
+                    case "@doinp":
+                    case "@doin":
+                    case "@dinput":
+                    case "@dinp":
+                    case "@din":
+                    case "@di":
+                        if (Split.Length > 1)
+                        {
+                            switch (Split[1].ToLower())
+                            {
+                                default:
+                                    AllowInput = true;
+                                    break;
+                                case "f":
+                                case "false":
+                                case "no":
+                                case "dont":
+                                case "n":
+                                    AllowInput = false;
+                                    break;
+                            }
+                        }
+                        else
+                        {
+                            AllowInput = !AllowInput;
+                        }
+                        break;
+                    case "@print":
+                        if (Split.Length > 2)
+                        {
+                            string Text = "";
+                            for (int i = 2; i < Split.Length; i++)
+                            {
+                                Text += Split[i] + " ";
+                            }
+                            PrintLine(Text, Color.FromName($"{Split[4][0].ToString().ToUpper()}{Split[4].ToString().Substring(1).ToLower()}"), true);
+                        }
+                        else
+                        {
+                            PrintLine("@print [color] text");
+                        }
                         break;
                     case "@persist":
                     case "@ps":
@@ -549,27 +792,69 @@ namespace Yek.Pages
                                 case "macros":
                                 case "macro":
                                 case "m":
-                                    PersistMacros = !PersistMacros;
-                                    if (PersistMacros)
+                                    if (Split.Length > 2)
                                     {
-                                        PrintLine("macros will now persist");
+                                        switch (Split[2].ToLower())
+                                        {
+                                            default:
+                                                PersistMacros = false;
+                                                PrintLine("macros will no longer persist");
+                                                break;
+                                            case "true":
+                                            case "t":
+                                            case "yes":
+                                            case "y":
+                                            case "do":
+                                                PersistMacros = true;
+                                                PrintLine("macros will now persist");
+                                                break;
+                                        }
                                     }
                                     else
                                     {
-                                        PrintLine("macros will no longer persist");
+                                        PersistMacros = !PersistMacros;
+                                        if (PersistMacros)
+                                        {
+                                            PrintLine("macros will now persist");
+                                        }
+                                        else
+                                        {
+                                            PrintLine("macros will no longer persist");
+                                        }
                                     }
                                     break;
                                 case "loops":
                                 case "loop":
                                 case "l":
-                                    PersistLoops = !PersistLoops;
-                                    if (PersistLoops)
+                                    if (Split.Length > 2)
                                     {
-                                        PrintLine("loops will now persist");
+                                        switch (Split[2].ToLower())
+                                        {
+                                            default:
+                                                PersistLoops = false;
+                                                PrintLine("loops will no longer persist");
+                                                break;
+                                            case "true":
+                                            case "t":
+                                            case "yes":
+                                            case "y":
+                                            case "do":
+                                                PersistLoops = true;
+                                                PrintLine("loops will now persist");
+                                                break;
+                                        }
                                     }
                                     else
                                     {
-                                        PrintLine("loops will no longer persist");
+                                        PersistLoops = !PersistLoops;
+                                        if (PersistLoops)
+                                        {
+                                            PrintLine("loops will now persist");
+                                        }
+                                        else
+                                        {
+                                            PrintLine("loops will no longer persist");
+                                        }
                                     }
                                     break;
                             }
@@ -607,8 +892,16 @@ namespace Yek.Pages
                             {
                                 Cmd += Split[i] + " ";
                             }
-                            Macros.Add(Convert.ToInt32(Split[1]), Cmd);
-                            PrintLine($"added new macro for key {Split[1]}: {Cmd}");
+                            if (Macros.ContainsKey(Convert.ToInt32(Split[1])))
+                            {
+                                Macros[Convert.ToInt32(Split[1])] = Cmd;
+                                PrintLine("there was already a macro for that key! it has been replaced");
+                            }
+                            else
+                            {
+                                Macros.Add(Convert.ToInt32(Split[1]), Cmd);
+                                PrintLine($"added new macro for key {Split[1]}: {Cmd}");
+                            }
                         }
                         else
                         {
@@ -663,6 +956,87 @@ namespace Yek.Pages
                         Active = false;
                         break;
                     #endregion
+                    #region Math
+                    case "@add":
+                    case "@+":
+                        if (Split.Length > 2)
+                        {
+                            try
+                            {
+                                Variables[Split[1]] += Convert.ToInt32(Split[2]);
+                                PrintLine($"new value of {Split[1]}: {Variables[Split[1]]}");
+                            }
+                            catch
+                            {
+                                PrintLine("@add [variable] [amount]");
+                            }
+                        }
+                        else
+                        {
+                            PrintLine("@add [variable] [amount]");
+                        }
+                        break;
+                    case "@sub":
+                    case "@subtract":
+                    case "@-":
+                        if (Split.Length > 2)
+                        {
+                            try
+                            {
+                                Variables[Split[1]] -= Convert.ToInt32(Split[2]);
+                                PrintLine($"new value of {Split[1]}: {Variables[Split[1]]}");
+                            }
+                            catch
+                            {
+                                PrintLine("@sub [variable] [amount]");
+                            }
+                        }
+                        else
+                        {
+                            PrintLine("@sub [variable] [amount]");
+                        }
+                        break;
+                    case "@mul":
+                    case "@multiply":
+                    case "@*":
+                        if (Split.Length > 2)
+                        {
+                            try
+                            {
+                                Variables[Split[1]] *= Convert.ToInt32(Split[2]);
+                                PrintLine($"new value of {Split[1]}: {Variables[Split[1]]}");
+                            }
+                            catch
+                            {
+                                PrintLine("@mul [variable] [amount]");
+                            }
+                        }
+                        else
+                        {
+                            PrintLine("@mul [variable] [amount]");
+                        }
+                        break;
+                    case "@div":
+                    case "@divide":
+                    case "@/":
+                        if (Split.Length > 2)
+                        {
+                            try
+                            {
+                                Variables[Split[1]] /= Convert.ToInt32(Split[2]);
+                                PrintLine($"new value of {Split[1]}: {Variables[Split[1]]}");
+                            }
+                            catch
+                            {
+                                PrintLine("@div [variable] [amount]");
+                            }
+                        }
+                        else
+                        {
+                            PrintLine("@div [variable] [amount]");
+                        }
+                        break;
+                    #endregion
                     #region Draw Commands
                     case "@clear":
                     case "@clr":
@@ -675,7 +1049,7 @@ namespace Yek.Pages
                             catch
                             {
                                 if (Command.StartsWith('&')) Looped.RemoveAt(Looped.IndexOf(Command));
-                                PrintLine("??? that is not a COLOLR!!", Color.Red);
+                                PrintLine($"??? that is not a COLOLR!! ({Command})", Color.Red);
                                 PrintLine("roygbiv (but not blue or indigo or violet i must save your eye from blue light)", Color.Red);
                             }
                         }
@@ -738,7 +1112,7 @@ namespace Yek.Pages
                                             {
                                                 Text += Split[i] + " ";
                                             }
-                                            Graphics.Canvas.DrawString($"{Text}", Kernel.DefaultFont, Color.FromName($"{Split[4][0].ToString().ToUpper()}{Split[4].ToString().Substring(1).ToLower()}"), Convert.ToInt32(Split[2]), Convert.ToInt32(Split[3]));
+                                            Graphics.Canvas.DrawString($"{ProcessVariables(Text)}", Kernel.DefaultFont, Color.FromName($"{Split[4][0].ToString().ToUpper()}{Split[4].ToString().Substring(1).ToLower()}"), Convert.ToInt32(Split[2]), Convert.ToInt32(Split[3]));
                                         }
                                         catch
                                         {
@@ -862,7 +1236,7 @@ namespace Yek.Pages
                             switch (Split[1])
                             {
                                 default:
-                                    PrintLine("@font [default/cosmos/thin/sun/aisarn/consl/kmfont/light/ramafo/small]");
+                                    PrintLine("@font [default/cosmos/thin/tiny/sun/aisarn/consl/kmfont/light/ramafo/small]");
                                     break;
                                 case "default":
                                 case "d":
@@ -874,6 +1248,9 @@ namespace Yek.Pages
                                     break;
                                 case "thin":
                                     Kernel.DefaultFont = ResourceLoader.FontThin;
+                                    break;
+                                case "tiny":
+                                    Kernel.DefaultFont = ResourceLoader.FontTiny;
                                     break;
                                 case "sun":
                                     Kernel.DefaultFont = ResourceLoader.FontSun;
@@ -907,7 +1284,7 @@ namespace Yek.Pages
                         }
                         else
                         {
-                            PrintLine("@font [default/cosmos/thin/sun/aisarn/consl/kmfont/light/ramafo/small]");
+                            PrintLine("@font [default/cosmos/thin/tiny/sun/aisarn/consl/kmfont/light/ramafo/small]");
                         }
                         break;
                     #endregion
@@ -939,7 +1316,7 @@ namespace Yek.Pages
                                     }
                                     catch
                                     {
-                                        PrintLine("network error", Color.Red);
+                                        PrintLine($"network error ({Command})", Color.Red);
                                     }
                                     break;
                                 case "https":
@@ -1003,7 +1380,7 @@ namespace Yek.Pages
 
                                 if (Addr == null)
                                 {
-                                    PrintLine("oh no the address is null", Color.Red);
+                                    PrintLine($"oh no the address is null ({Command})", Color.Red);
                                     PrintLine("backup plan: maybe you typed in the ip itself");
                                     try
                                     {
@@ -1012,7 +1389,7 @@ namespace Yek.Pages
                                     }
                                     catch
                                     {
-                                        PrintLine("nope its still bad", Color.Red);
+                                        PrintLine($"nope its still bad ({Command})", Color.Red);
                                         PrintLine("i give up", Color.Red);
                                         return;
                                     }
@@ -1038,7 +1415,7 @@ namespace Yek.Pages
                             }
                             catch (Exception ex)
                             {
-                                PrintLine($"something went wrong when fetching {Split[1]}", Color.Red);
+                                PrintLine($"something went wrong when fetching {Split[1]} ({Command})", Color.Red);
                                 PrintLine($"{ex.HResult}:{ex.Message}", Color.Red);
                             }
                         }
@@ -1082,14 +1459,14 @@ namespace Yek.Pages
 
                                 if (Addr == null)
                                 {
-                                    PrintLine("address null, backup plan", Color.Red);
+                                    PrintLine($"address null, backup plan ({Command})", Color.Red);
                                     try
                                     {
                                         Addr = new Address(Convert.ToByte(DomainName.Split('.')[0]), Convert.ToByte(DomainName.Split('.')[1]), Convert.ToByte(DomainName.Split('.')[2]), Convert.ToByte(DomainName.Split('.')[3]));
                                     }
                                     catch
                                     {
-                                        PrintLine("you did it wrong lol", Color.Red);
+                                        PrintLine($"you did it wrong lol ({Command})", Color.Red);
                                         return;
                                     }
                                 }
@@ -1109,12 +1486,12 @@ namespace Yek.Pages
                                 }
                                 catch
                                 {
-                                    PrintLine("screwed up real bad trying to run those tf did you do", Color.Red);
+                                    PrintLine($"screwed up real bad trying to run those rfetch stuffs tf did you do ({Command})", Color.Red);
                                 }
                             }
                             catch (Exception ex)
                             {
-                                PrintLine($"something went wrong when fetching {Split[1]}", Color.Red);
+                                PrintLine($"something went wrong when fetching {Split[1]} ({Command})", Color.Red);
                                 PrintLine($"{ex.HResult}:{ex.Message}", Color.Red);
                             }
                         }
@@ -1128,27 +1505,30 @@ namespace Yek.Pages
             }
             else
             {
-                PrintLine(Command);
+                PrintLine(ProcessVariables(Command));
             }
         }
 
-        static void PrintLine(string Message, Color? Col = null)
+        static void PrintLine(string Message, Color? Col = null, bool Force = false)
         {
-            if (!DoOutput) return;
+            if (!DoOutput && !Force) return;
             if (Col == null) Col = Color.Green;
             for (int i = 0; i < Message.Length; i += MaxLine)
             {
-                Graphics.Canvas.DrawString($"{Message.Substring(i, Math.Min(MaxLine, Message.Length - i))}", Kernel.DefaultFont, (Color)Col, LineX, Dip + (LineY * 20));
+                Graphics.Canvas.DrawString($"{Message.Substring(i, Math.Min(MaxLine, Message.Length - i))}", Kernel.DefaultFont, (Color)Col, LineX, Dip + (LineY * (Kernel.DefaultFont.Height + 4)));
                 LineY++;
+                if (LineY > (Kernel.ScreenHeight / (Kernel.DefaultFont.Height + 4)) - 4)
+                {
+                    LineY = 0;
+                    if (Dip == 65) Dip = 5;
+                }
                 Graphics.Canvas.Display();
             }
-            //Graphics.Canvas.DrawString($"{Message}", Kernel.DefaultFont, (Color)Col, LineX, Dip + (LineY * 20));
-            //LineY++;
         }
 
         static string RandomFace()
         {
-            Random r = new Random();
+            Random r = new();
             int Face = r.Next(10);
             switch (Face)
             {

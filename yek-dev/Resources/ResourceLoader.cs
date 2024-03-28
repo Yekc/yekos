@@ -7,6 +7,7 @@ namespace Yek.Resources
     public static class ResourceLoader
     {
         [ManifestResourceStream(ResourceName = "yek-dev.Resources.ka8x16thin-1.psf")] public static byte[] thin;
+        [ManifestResourceStream(ResourceName = "yek-dev.Resources.cp850-8x8.psf")] public static byte[] tiny;
         [ManifestResourceStream(ResourceName = "yek-dev.Resources.lat0-sun16.psf")] public static byte[] sun;
         [ManifestResourceStream(ResourceName = "yek-dev.Resources.tis-phaisarn.f16.psf")] public static byte[] tisaisarn;
         [ManifestResourceStream(ResourceName = "yek-dev.Resources.tis-ptconsl.f16.psf")] public static byte[] tisconsl;
@@ -29,6 +30,7 @@ namespace Yek.Resources
         [ManifestResourceStream(ResourceName = "yek-dev.Resources.rat.bmp")] public static byte[] rat;
 
         public static PCScreenFont FontThin = PCScreenFont.LoadFont(thin);
+        public static PCScreenFont FontTiny = PCScreenFont.LoadFont(tiny);
         public static PCScreenFont FontSun = PCScreenFont.LoadFont(sun);
         public static PCScreenFont FontTisAisarn = PCScreenFont.LoadFont(tisaisarn);
         public static PCScreenFont FontTisConsl = PCScreenFont.LoadFont(tisconsl);
