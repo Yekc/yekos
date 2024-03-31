@@ -22,7 +22,9 @@
 
     <ItemGroup>
       <None Remove="Resources\arrow.bmp" />
+      <None Remove="Resources\CaviarDreams_Bold.psf" />
       <None Remove="Resources\cp850-8x8.psf" />
+      <None Remove="Resources\gr737-9x16-medieval.psf" />
       <None Remove="Resources\hampter1.bmp" />
       <None Remove="Resources\hampter2.bmp" />
       <None Remove="Resources\hampter3.bmp" />
@@ -47,7 +49,9 @@
 
     <ItemGroup>
       <EmbeddedResource Include="Resources\arrow.bmp" />
+      <EmbeddedResource Include="Resources\CaviarDreams_Bold.psf" />
       <EmbeddedResource Include="Resources\cp850-8x8.psf" />
+      <EmbeddedResource Include="Resources\gr737-9x16-medieval.psf" />
       <EmbeddedResource Include="Resources\hampter1.bmp" />
       <EmbeddedResource Include="Resources\hampter2.bmp" />
       <EmbeddedResource Include="Resources\hampter3.bmp" />

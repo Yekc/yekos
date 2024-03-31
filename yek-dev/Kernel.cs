@@ -1,9 +1,6 @@
-﻿using Cosmos.Core;
-using Cosmos.Core.Memory;
+﻿using Cosmos.Core.Memory;
 using Cosmos.HAL;
 using Cosmos.System.Graphics.Fonts;
-using Cosmos.System.Network.Config;
-using Cosmos.System.Network.IPv4.UDP.DHCP;
 using System;
 using System.Drawing;
 using Yek.Pages;
@@ -77,19 +74,22 @@ namespace Yek
 
                 #region Pages
 
-                Pages.Home.Draw();
-                Pages.Terminal.Check();
-                Pages.Terminal.Draw();
-                Pages.HurtEyes.Draw();
-                Pages.ModernInterface.Draw();
-                Pages.PresentInterface.Draw();
-                Pages.AncientInterface.Draw();
+                Home.Draw();
+                Terminal.Check();
+                Terminal.Draw();
+                HurtEyes.Draw();
+                ModernInterface.Draw();
+                PresentInterface.Draw();
+                AncientInterface.Draw();
+                Infinity.Draw();
 
                 #endregion
 
-                Graphics.Canvas.DrawString($"M:{Terminal.Macros.Count},L:{Terminal.Looped.Count},SL:{Terminal.SetLooped.Count}", DefaultFont, Color.DarkCyan, 0, ScreenHeight - 20);
-
-                Mouse.Draw();
+                if (!Infinity.Active)
+                {
+                    Graphics.Canvas.DrawString($"M:{Terminal.Macros.Count},L:{Terminal.Looped.Count},SL:{Terminal.SetLooped.Count}", DefaultFont, Color.DarkCyan, 0, ScreenHeight - 20);
+                    Mouse.Draw();
+                }
                 Graphics.Canvas.Display();
 
                 PreviousHeap = Heap.Collect();

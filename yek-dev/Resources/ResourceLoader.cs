@@ -9,6 +9,8 @@ namespace Yek.Resources
         [ManifestResourceStream(ResourceName = "yek-dev.Resources.ka8x16thin-1.psf")] public static byte[] thin;
         [ManifestResourceStream(ResourceName = "yek-dev.Resources.cp850-8x8.psf")] public static byte[] tiny;
         [ManifestResourceStream(ResourceName = "yek-dev.Resources.lat0-sun16.psf")] public static byte[] sun;
+        [ManifestResourceStream(ResourceName = "yek-dev.Resources.CaviarDreams_Bold.psf")] public static byte[] modern_f;
+        [ManifestResourceStream(ResourceName = "yek-dev.Resources.gr737-9x16-medieval.psf")] public static byte[] medieval;
         [ManifestResourceStream(ResourceName = "yek-dev.Resources.tis-phaisarn.f16.psf")] public static byte[] tisaisarn;
         [ManifestResourceStream(ResourceName = "yek-dev.Resources.tis-ptconsl.f16.psf")] public static byte[] tisconsl;
         [ManifestResourceStream(ResourceName = "yek-dev.Resources.tis-ptcufont.f20.psf")] public static byte[] tiscufont;
@@ -32,6 +34,8 @@ namespace Yek.Resources
         public static PCScreenFont FontThin = PCScreenFont.LoadFont(thin);
         public static PCScreenFont FontTiny = PCScreenFont.LoadFont(tiny);
         public static PCScreenFont FontSun = PCScreenFont.LoadFont(sun);
+        public static PCScreenFont FontModern = PCScreenFont.LoadFont(modern_f);
+        public static PCScreenFont FontMedieval = PCScreenFont.LoadFont(medieval);
         public static PCScreenFont FontTisAisarn = PCScreenFont.LoadFont(tisaisarn);
         public static PCScreenFont FontTisConsl = PCScreenFont.LoadFont(tisconsl);
         public static PCScreenFont FontTisCufont = PCScreenFont.LoadFont(tiscufont);

@@ -67,7 +67,7 @@ namespace Yek.Pages
                     if (AllowInput) Content += "\n";
                     break;
                 case ConsoleKeyEx.Escape:
-                    if (HurtEyes.Active || AncientInterface.Active) break;
+                    if (HurtEyes.Active || AncientInterface.Active || Infinity.Active) break;
                     Active = !Active;
                     if (Active)
                     {
@@ -88,6 +88,18 @@ namespace Yek.Pages
                     if (Active) FirstDraw();
                     break;
                 case ConsoleKeyEx.Enter:
+                    if (Content.ToLower() == "infinity")
+                    {
+                        Infinity.Active = true;
+                        Active = false;
+                        Content = "";
+                        LineY = 0;
+                        Dip = 65;
+                        LineX = 5;
+                        Fm = false;
+                        if (!PersistLoops) Looped.Clear();
+                        if (!PersistMacros) Macros.Clear();
+                    }
                     if (Active && AllowInput && Content != "")
                     {
                         LineY++;
@@ -245,16 +257,16 @@ namespace Yek.Pages
                             Command = Command.Replace($"$^{Command.Split("$^")[1].Split(':')[0]}:+:{Command.Split(':')[2].Split(' ')[0]}", (Convert.ToInt32(ProcessVariables(Command.Split("$^")[1].Split(':')[0])) + Convert.ToInt32(ProcessVariables(Command.Split(':')[2].Split(' ')[0]))).ToString());
                             break;
                         case "-":
-                            Command = Command.Replace($"$^{Command.Split("$^")[1].Split(':')[0]}:+:{Command.Split(':')[2].Split(' ')[0]}", (Convert.ToInt32(ProcessVariables(Command.Split("$^")[1].Split(':')[0])) - Convert.ToInt32(ProcessVariables(Command.Split(':')[2].Split(' ')[0]))).ToString());
+                            Command = Command.Replace($"$^{Command.Split("$^")[1].Split(':')[0]}:-:{Command.Split(':')[2].Split(' ')[0]}", (Convert.ToInt32(ProcessVariables(Command.Split("$^")[1].Split(':')[0])) - Convert.ToInt32(ProcessVariables(Command.Split(':')[2].Split(' ')[0]))).ToString());
                             break;
                         case "*":
-                            Command = Command.Replace($"$^{Command.Split("$^")[1].Split(':')[0]}:+:{Command.Split(':')[2].Split(' ')[0]}", (Convert.ToInt32(ProcessVariables(Command.Split("$^")[1].Split(':')[0])) * Convert.ToInt32(ProcessVariables(Command.Split(':')[2].Split(' ')[0]))).ToString());
+                            Command = Command.Replace($"$^{Command.Split("$^")[1].Split(':')[0]}:*:{Command.Split(':')[2].Split(' ')[0]}", (Convert.ToInt32(ProcessVariables(Command.Split("$^")[1].Split(':')[0])) * Convert.ToInt32(ProcessVariables(Command.Split(':')[2].Split(' ')[0]))).ToString());
                             break;
                         case "/":
-                            Command = Command.Replace($"$^{Command.Split("$^")[1].Split(':')[0]}:+:{Command.Split(':')[2].Split(' ')[0]}", (Convert.ToInt32(ProcessVariables(Command.Split("$^")[1].Split(':')[0])) / Convert.ToInt32(ProcessVariables(Command.Split(':')[2].Split(' ')[0]))).ToString());
+                            Command = Command.Replace($"$^{Command.Split("$^")[1].Split(':')[0]}:/:{Command.Split(':')[2].Split(' ')[0]}", (Convert.ToInt32(ProcessVariables(Command.Split("$^")[1].Split(':')[0])) / Convert.ToInt32(ProcessVariables(Command.Split(':')[2].Split(' ')[0]))).ToString());
                             break;
                         case "%":
-                            Command = Command.Replace($"$^{Command.Split("$^")[1].Split(':')[0]}:+:{Command.Split(':')[2].Split(' ')[0]}", (Convert.ToInt32(ProcessVariables(Command.Split("$^")[1].Split(':')[0])) % Convert.ToInt32(ProcessVariables(Command.Split(':')[2].Split(' ')[0]))).ToString());
+                            Command = Command.Replace($"$^{Command.Split("$^")[1].Split(':')[0]}:%:{Command.Split(':')[2].Split(' ')[0]}", (Convert.ToInt32(ProcessVariables(Command.Split("$^")[1].Split(':')[0])) % Convert.ToInt32(ProcessVariables(Command.Split(':')[2].Split(' ')[0]))).ToString());
                             break;
                     }
                 }
@@ -1236,7 +1248,7 @@ namespace Yek.Pages
                             switch (Split[1])
                             {
                                 default:
-                                    PrintLine("@font [default/cosmos/thin/tiny/sun/aisarn/consl/kmfont/light/ramafo/small]");
+                                    PrintLine("@font [default/cosmos/thin/tiny/sun/modern/medieval/aisarn/consl/kmfont/light/ramafo/small]");
                                     break;
                                 case "default":
                                 case "d":
@@ -1254,6 +1266,12 @@ namespace Yek.Pages
                                     break;
                                 case "sun":
                                     Kernel.DefaultFont = ResourceLoader.FontSun;
+                                    break;
+                                case "modern":
+                                    Kernel.DefaultFont = ResourceLoader.FontModern;
+                                    break;
+                                case "medieval":
+                                    Kernel.DefaultFont = ResourceLoader.FontMedieval;
                                     break;
                                 case "aisarn":
                                     Kernel.DefaultFont = ResourceLoader.FontTisAisarn;
@@ -1284,7 +1302,7 @@ namespace Yek.Pages
                         }
                         else
                         {
-                            PrintLine("@font [default/cosmos/thin/tiny/sun/aisarn/consl/kmfont/light/ramafo/small]");
+                            PrintLine("@font [default/cosmos/thin/tiny/sun/modern/medieval/aisarn/consl/kmfont/light/ramafo/small]");
                         }
                         break;
                     #endregion

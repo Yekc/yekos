@@ -89,7 +89,7 @@ namespace Yek.Pages
 
             #endregion
 
-            if (!Terminal.Active && !HurtEyes.Active && !ModernInterface.Active && !PresentInterface.Active && !AncientInterface.Active)
+            if (!Terminal.Active && !HurtEyes.Active && !ModernInterface.Active && !PresentInterface.Active && !AncientInterface.Active && !Infinity.Active)
             {
                 //1000
                 #region Chaos
